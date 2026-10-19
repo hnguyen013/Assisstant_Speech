@@ -1,0 +1,52 @@
+[{
+ "categoryString": "EXTENSION",
+ "dateBuilt": "2025-03-16T07:04:15+0000",
+ "nonVisible": "true",
+ "iconName": "https://thecodingbus.info/wp-content/uploads/2025/03/tcbgemin.png",
+ "methods": [
+  {
+   "deprecated": "false",
+   "name": "GetLastResponse",
+   "description": "Get the last response from the Gemini API.",
+   "params": [],
+   "returnType": "text"
+  },
+  {
+   "deprecated": "false",
+   "name": "SendQuestion",
+   "description": "Send a question to the Gemini API and get a response.",
+   "params": [{
+    "name": "question",
+    "type": "text"
+   }]
+  },
+  {
+   "deprecated": "false",
+   "name": "SetAPIKey",
+   "description": "Set the Gemini API key to use for chatbot requests.",
+   "params": [{
+    "name": "key",
+    "type": "text"
+   }]
+  }
+ ],
+ "blockProperties": [],
+ "helpUrl": "",
+ "type": "tcbgeminibot.com.TCBGeminiBot",
+ "androidMinSdk": 7,
+ "version": "1",
+ "external": "true",
+ "showOnPalette": "true",
+ "name": "TCBGeminiBot",
+ "helpString": "A simple MIT App Inventor extension by The Coding Bus (TCB) to create chatbots using the Gemini API. Add your free API key, use 2-3 methods to send questions and get responses, and build interactive AI-powered apps with ease!",
+ "properties": [],
+ "events": [{
+  "deprecated": "false",
+  "name": "GotResponse",
+  "description": "Triggered when a response is received from the Gemini API.",
+  "params": [{
+   "name": "response",
+   "type": "text"
+  }]
+ }]
+}]
