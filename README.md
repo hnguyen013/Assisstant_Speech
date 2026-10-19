@@ -1,48 +1,81 @@
 # Assisstant_Speech
 
-Ứng dụng trợ lý ảo luyện nói tiếng Anh tương tác bằng giọng nói xây dựng trên nền tảng **MIT App Inventor**, kết hợp với mô hình **Google Gemini AI** (`gemini-2.5-flash`).
+Ứng dụng trợ lý ảo luyện nói tiếng Anh tương tác bằng giọng nói xây dựng trên nền tảng **MIT App Inventor**, kết hợp với mô hình trí tuệ nhân tạo **Google Gemini AI** (`gemini-2.5-flash`).
 
 ---
 
-## 📌 Tính năng chính
+## 📌 1. Giới thiệu & Tính năng chính
 
-- **Nhận diện giọng nói (SpeechRecognizer):** Thu âm và chuyển giọng nói của người dùng thành văn bản tiếng Anh.
-- **Phát âm phản hồi (TextToSpeech):** Phát âm chuẩn câu hỏi, hướng dẫn và phản hồi từ AI.
-- **Tích hợp Gemini API:** Xử lý ngôn ngữ tự nhiên, đóng vai trò trợ giảng tương tác thông minh.
-- **Luyện tập theo từng Unit:** Tự động nhận diện Unit người học chọn và nạp ngân hàng từ vựng tương ứng.
-- **Reset phiên học:** Cho phép bắt đầu lại buổi học bất kỳ lúc nào.
-
----
-
-## 🛠️ Nhật ký cập nhật & Sửa lỗi (Changelog)
-
-### 1. Fix BUG-1: Chặn gửi trùng request khi API đang xử lý
-- **Vấn đề:** Nút Mic (`Button1`) vẫn hiển thị/cho phép bấm trong lúc request gửi đi đang chờ phản hồi từ Gemini API, dẫn đến việc người dùng có thể kích hoạt nhiều request trùng lặp.
-- **Giải pháp:** Ẩn nút Mic (`Button1.Visible ← FALSE`) ngay khi bắt đầu gửi request và chỉ bật lại (`Button1.Visible ← TRUE`) khi nhận xong kết quả (`Web1.GotText`) hoặc khi bấm Reset (`Button3.Click`).
-
-### 2. Fix BUG-2: Chuẩn hóa payload gọi Gemini API
-- **Vấn đề:** Payload JSON gửi lên Gemini API thiếu trường `"role": "user"` trong mảng `contents`, gây lỗi **HTTP 400 Bad Request**.
-- **Giải pháp:** Cập nhật khối tạo payload trong `SpeechRecognizer1.AfterGettingText` để thêm `"role": "user"`.
-
-### 3. Fix BUG-3: Cập nhật API endpoint sang `v1beta`
-- **Vấn đề:** Endpoint ban đầu sử dụng `/v1/models/gemini-2.5-flash`, trong khi model `gemini-2.5-flash` yêu cầu endpoint `/v1beta/`.
-- **Giải pháp:** Đổi URL sang `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=...` ở cả block logic (`Screen1.bky`) và thuộc tính component `Web1` (`Screen1.scm`).
-
-### 4. Fix BUG-7: Bổ sung xử lý lỗi HTTP cho API (Error Handling)
-- **Vấn đề:** Khi API trả về mã lỗi HTTP (400, 404, 429, 500...), hàm decode JSON không tìm thấy key `"candidates"` nên trả về chuỗi `"not found"`. Lệnh truy xuất phần tử danh sách `candidates[1]` sau đó gây crash app (runtime error).
-- **Giải pháp:** Bổ sung khối kiểm tra điều kiện `responseCode = 200`:
-  - **Nếu thành công (200):** Tiến hành bóc tách kết quả câu trả lời bình thường.
-  - **Nếu lỗi (!= 200):** Thông báo lỗi qua giọng nói (*"Sorry, there was an error. Please try again."*) và hiển thị thông báo trên giao diện, đồng thời mở lại nút Mic để người dùng thử lại.
-
-### 5. Fix BUG-14: Reset trạng thái chọn Unit sau khi bấm nút Reset
-- **Vấn đề:** Nút Reset (`Button3.Click`) chỉ reset các biến `questionIndex`, `currentUnit`, `history` nhưng quên đặt lại biến cờ `global first` về `FALSE`. Sau khi bấm Reset, `first` vẫn là `TRUE`, khiến tất cả các nhánh nhận diện Unit tiếp theo bị bỏ qua và app liên tục báo *"Sorry. Can you say again?"*.
-- **Giải pháp:** Bổ sung lệnh gán `global first ← FALSE` vào luồng sự kiện `Button3.Click`.
+- **Nhận diện giọng nói (SpeechRecognizer):** Thu âm và chuyển giọng nói của học sinh thành văn bản tiếng Anh (`SpeechRecognizer1`).
+- **Phát âm chuẩn (TextToSpeech):** Phát âm các câu hỏi, hướng dẫn và phản hồi từ AI (`TextToSpeech1`).
+- **Tích hợp Gemini AI:** Tự động sửa lỗi phát âm/ngữ pháp và hỗ trợ học sinh lớp 4 thực hành hội thoại (`Web1`).
+- **Luyện tập theo từng Unit:** Tự động nhận diện Unit học sinh chọn (Unit 1, Unit 11 đến Unit 20) và nạp ngân hàng câu hỏi tương ứng.
+- **Reset phiên học:** Cho phép bắt đầu lại buổi học bất kỳ lúc nào (`Button3`).
 
 ---
 
-## 🚀 Hướng dẫn Import vào MIT App Inventor
+## 🛠️ 2. Các lỗi đã được khắc phục (Fixed Bugs)
 
-1. Đóng gói mã nguồn thành file `.aia` (thực chất là file zip của thư mục project).
+| Mã lỗi | Mức độ | Vị trí | Mô tả vấn đề & Cách khắc phục | Trạng thái |
+|---|---|---|---|---|
+| **BUG-1** | 🔴 Cao | `SpeechRecognizer1.AfterGettingText` | Nút Mic (`Button1`) hiển thị lại quá sớm khi request đang gửi, dẫn đến việc bấm liên tục gây trùng request. **Đã fix:** Ẩn nút Mic (`Button1.Visible ← FALSE`) trong lúc gọi API, chỉ bật lại khi nhận response hoặc Reset. | ✅ Đã sửa |
+| **BUG-2** | 🔴 Cao | `SpeechRecognizer1.AfterGettingText` | Payload gọi Gemini API thiếu trường `"role": "user"` trong `contents`, gây lỗi **HTTP 400 Bad Request**. **Đã fix:** Thêm `"role": "user"` vào payload JSON. | ✅ Đã sửa |
+| **BUG-3** | 🔴 Cao | `Web1.Url` (`Screen1.bky` & `Screen1.scm`) | Endpoint API sử dụng `/v1/`, nhưng model `gemini-2.5-flash` yêu cầu endpoint `/v1beta/`, dẫn đến lỗi **HTTP 404**. **Đã fix:** Chuyển endpoint sang `v1beta`. | ✅ Đã sửa |
+| **BUG-7** | 🔴 Cao | `Web1.GotText` | Không có khối kiểm tra mã HTTP; khi API lỗi (400, 404, 429...), app truy xuất `candidatesList[1]` gây crash runtime. **Đã fix:** Thêm rẽ nhánh `if responseCode = 200`, có thông báo giọng nói & hiển thị lỗi khi gặp sự cố. | ✅ Đã sửa |
+| **BUG-14** | 🔴 Cao | `Button3.Click` (Reset) | Nút Reset không đặt lại biến cờ `global first` về `FALSE`. Sau khi Reset, `first` vẫn là `TRUE` khiến app bỏ qua việc nhận diện Unit mới và luôn báo *"Sorry. Can you say again?"*. **Đã fix:** Thêm `global first ← FALSE` vào sự kiện Reset. | ✅ Đã sửa |
+
+---
+
+## 🔍 3. Rà soát các lỗi & vấn đề còn tồn đọng (Remaining Issues & Backlog)
+
+Dưới đây là danh sách toàn bộ các lỗi logic, trải nghiệm người dùng (UX) và tối ưu mã nguồn còn lại được phát hiện trong quá trình rà soát:
+
+### 3.1. Nhóm lỗi Logic & Trải nghiệm (Cần lưu ý)
+
+- **BUG-6 (🟡 Trung bình) — `Label2` ("You said: ...") không bao giờ hiển thị:**
+  - *Hiện trạng:* Trong `Screen1.scm`, `Label2` có thuộc tính `Visible: False`. Trong `Screen1.bky`, app có gán nội dung câu nói của học sinh (`Label2.Text ← "You said: " + global userText`), nhưng lại **không bao giờ gọi lệnh hiển thị** `Label2.Visible ← True`.
+  - *Ảnh hưởng:* Học sinh không xem được câu nói mà AI nhận diện/sửa lại trên màn hình.
+  - *Đề xuất fix:* Bổ sung khối lệnh `set Label2.Visible to TRUE` bên trong `Web1.GotText` (hoặc đặt mặc định `Visible: True` trong Designer).
+
+- **BUG-9 (🟡 Trung bình) — Nhận diện nhầm Unit do `VobUnit1` chứa từ `"1"`:**
+  - *Hiện trạng:* Danh sách từ vựng `VobUnit1` có chứa chuỗi `"1"`.
+  - *Ảnh hưởng:* Khi học sinh nói chọn *"Unit 11"*, chuỗi `"unit 11"` có chứa ký tự `"1"`, khiến vòng lặp kiểm tra `VobUnit1` khớp trước và tự động chọn nhầm Unit 1 thay vì Unit 11.
+  - *Đề xuất fix:* Bỏ phần tử `"1"` hoặc chuẩn hóa từ khóa nhận diện Unit thành từ đầy đủ (ví dụ: `"unit 1"`, `"unit one"` thay vì số đơn lẻ).
+
+- **BUG-15 & BUG-16 (🟡 Trung bình) — Nút Reset chưa dọn sạch hoàn toàn các biến phiên cũ:**
+  - *Hiện trạng:* Trong `Button3.Click`, biến `currentVob` chưa được reset về rỗng (`create empty list`) và biến `check` chưa được reset về `FALSE`.
+  - *Ảnh hưởng:* Vẫn còn lưu lại danh sách từ vựng của Unit cũ trong bộ nhớ đệm trước khi chọn Unit mới.
+  - *Đề xuất fix:* Thêm lệnh gán `global currentVob ← create empty list` và `global check ← FALSE` vào `Button3.Click`.
+
+- **BUG-4 & BUG-13 (🟡 Trung bình) — Biến `history` chưa lưu đúng ngữ cảnh hội thoại:**
+  - *Hiện trạng:* `global history` chỉ lưu câu hỏi gần nhất của máy (`currentUnit[questionIndex]`), không bao gồm câu trả lời trước đó của học sinh.
+  - *Ảnh hưởng:* Câu lệnh prompt gửi cho Gemini nói *"Question: [history] Speech text: [raw]"* nhưng AI chỉ thấy câu hỏi hiện tại mà không có lịch sử các lượt tương tác trước, làm giảm khả năng ngữ cảnh của AI.
+  - *Đề xuất fix:* Nối thêm chuỗi câu trả lời của học sinh vào `global history` sau mỗi lượt hoàn thành.
+
+- **BUG-12 (🟢 Thấp) — Trạng thái sau khi hoàn thành Unit ("Great job!"):**
+  - *Hiện trạng:* Khi hoàn thành hết câu hỏi của một Unit, app phát câu chúc mừng *"Great job! You finished Unit speaking practice"*. Tuy nhiên app không tự động chuyển trạng thái để chọn Unit mới. Nếu học sinh tiếp tục bấm Mic nói, app sẽ tiếp tục lặp lại câu chúc mừng này cho đến khi bấm Reset thủ công.
+  - *Đề xuất fix:* Tự động gọi hàm Reset hoặc đặt `first ← FALSE` khi kết thúc Unit để học sinh có thể chuyển sang Unit khác ngay.
+
+- **BUG-10 (🟢 Thấp) — Khối lệnh `if (first = FALSE)` bị lồng trùng lặp (Dead Code):**
+  - *Hiện trạng:* Trong `Web1.GotText`, bên trong nhánh `DO0` của khối `controls_if (first = FALSE)` đầu tiên, có một khối con `controls_if (first = FALSE)` giống hệt bị lồng vào trong (do lỗi thao tác khi kéo thả block).
+  - *Ảnh hưởng:* Không gây lỗi app nhưng làm rác mã nguồn.
+
+### 3.2. Nhóm bảo mật & Dọn dẹp tài nguyên (Code Hygiene & Security)
+
+- **BUG-5 (🟡 Bảo mật) — Gemini API Key bị lộ dạng Plain Text:**
+  - *Hiện trạng:* API Key (`AIzaSy...`) được đính kèm trực tiếp trong khối văn bản ở `Screen1.bky`.
+  - *Khuyến cáo:* Bất kỳ ai mở file `.aia` đều đọc được API key. Nên giới hạn quyền hạn của Key trên Google Cloud Console (HTTP referrers / Android apps) hoặc chuyển sang backend trung gian nếu đưa vào sản xuất.
+
+- **Tài nguyên thừa (Unused Components & Extensions):**
+  - Component `SpeechRecognizer2`: Đã khai báo trong `Screen1.scm` nhưng không có bất kỳ khối lệnh nào sử dụng trong `Screen1.bky`.
+  - Biến toàn cục `isWaiting`: Khai báo sẵn nhưng không dùng ở đâu.
+  - Extension `tcbgeminibot.com` trong thư mục `assets/external_comps/`: Đã import nhưng màn hình không sử dụng (dùng component `Web` tiêu chuẩn). Có thể xóa để giảm dung lượng file `.aia`.
+
+---
+
+## 🚀 4. Hướng dẫn sử dụng & Đóng gói (.aia)
+
+1. File `.aia` hoàn chỉnh đã được đóng gói sẵn tại thư mục gốc: `Assisstant_Speech.aia` (kích thước ~3.45 MB).
 2. Truy cập [MIT App Inventor](https://ai2.appinventor.mit.edu/).
 3. Chọn menu **Projects** → **Import project (.aia) from my computer...**
-4. Chọn file `Assisstant_Speech.aia` và tiến hành mở dự án.
+4. Chọn file `Assisstant_Speech.aia` để tiến hành lập trình hoặc xuất file cài đặt Android (`.apk`).
