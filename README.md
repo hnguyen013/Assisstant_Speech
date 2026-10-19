@@ -10,6 +10,7 @@
 - **Phát âm chuẩn (TextToSpeech):** Phát âm các câu hỏi, hướng dẫn và phản hồi từ AI (`TextToSpeech1`).
 - **Tích hợp Gemini AI:** Tự động sửa lỗi phát âm/ngữ pháp và hỗ trợ học sinh lớp 4 thực hành hội thoại (`Web1`).
 - **Luyện tập theo từng Unit:** Tự động nhận diện Unit học sinh chọn (Unit 1, Unit 11 đến Unit 20) và nạp ngân hàng câu hỏi tương ứng.
+- **Hội thoại có ngữ cảnh (Multi-turn Context):** Lưu trữ lịch sử câu hỏi và câu trả lời của các lượt trước vào `global history` để AI hiểu trọn vẹn mạch đối thoại.
 - **Reset phiên học:** Cho phép bắt đầu lại buổi học bất kỳ lúc nào (`Button3`).
 
 ---
@@ -25,6 +26,7 @@
 | **BUG-14** | 🔴 Cao | `Button3.Click` (Reset) | Nút Reset không đặt lại biến cờ `global first` về `FALSE`. Sau khi Reset, `first` vẫn là `TRUE` khiến app bỏ qua việc nhận diện Unit mới và luôn báo *"Sorry. Can you say again?"*. **Đã fix:** Thêm `global first ← FALSE` vào sự kiện Reset. | ✅ Đã sửa |
 | **BUG-15** | 🟡 Trung bình | `Button3.Click` (Reset) | Nút Reset không đặt lại `global check` về `FALSE`. **Đã fix:** Thêm `global check ← FALSE` vào `Button3.Click`. | ✅ Đã sửa |
 | **BUG-16** | 🟡 Trung bình | `Button3.Click` (Reset) | Nút Reset không làm rỗng `global currentVob`. **Đã fix:** Thêm `global currentVob ← create empty list` vào `Button3.Click`. | ✅ Đã sửa |
+| **BUG-4 & BUG-13** | 🟡 Trung bình | `StartUnit` / Prompt | Biến `history` bị ghi đè chỉ chứa câu hỏi hiện tại, không lưu câu trả lời trước đó của học sinh khiến ngữ cảnh AI bị đứt gãy. **Đã fix:** Cập nhật `StartUnit` để tích lũy toàn bộ mạch đối thoại (`[Câu hỏi cũ] -> Student: [Câu trả lời] -> Question: [Câu hỏi mới]`), giữ trọn vẹn ngữ cảnh hội thoại đa lượt cho Gemini AI. | ✅ Đã sửa |
 
 ---
 
@@ -43,11 +45,6 @@ Dưới đây là danh sách các lỗi logic, trải nghiệm người dùng (U
   - *Hiện trạng:* Danh sách từ vựng `VobUnit1` có chứa chuỗi `"1"`.
   - *Ảnh hưởng:* Khi học sinh nói chọn *"Unit 11"*, chuỗi `"unit 11"` có chứa ký tự `"1"`, khiến vòng lặp kiểm tra `VobUnit1` khớp trước và tự động chọn nhầm Unit 1 thay vì Unit 11.
   - *Đề xuất fix:* Bỏ phần tử `"1"` hoặc chuẩn hóa từ khóa nhận diện Unit thành từ đầy đủ (ví dụ: `"unit 1"`, `"unit one"` thay vì số đơn lẻ).
-
-- **BUG-4 & BUG-13 (🟡 Trung bình) — Biến `history` chưa lưu đúng ngữ cảnh hội thoại:**
-  - *Hiện trạng:* `global history` chỉ lưu câu hỏi gần nhất của máy (`currentUnit[questionIndex]`), không bao gồm câu trả lời trước đó của học sinh.
-  - *Ảnh hưởng:* Câu lệnh prompt gửi cho Gemini nói *"Question: [history] Speech text: [raw]"* nhưng AI chỉ thấy câu hỏi hiện tại mà không có lịch sử các lượt tương tác trước, làm giảm khả năng ngữ cảnh của AI.
-  - *Đề xuất fix:* Nối thêm chuỗi câu trả lời của học sinh vào `global history` sau mỗi lượt hoàn thành.
 
 - **BUG-12 (🟢 Thấp) — Trạng thái sau khi hoàn thành Unit ("Great job!"):**
   - *Hiện trạng:* Khi hoàn thành hết câu hỏi của một Unit, app phát câu chúc mừng *"Great job! You finished Unit speaking practice"*. Tuy nhiên app không tự động chuyển trạng thái để chọn Unit mới. Nếu học sinh tiếp tục bấm Mic nói, app sẽ tiếp tục lặp lại câu chúc mừng này cho đến khi bấm Reset thủ công.
