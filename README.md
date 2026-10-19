@@ -23,12 +23,14 @@
 | **BUG-3** | 🔴 Cao | `Web1.Url` (`Screen1.bky` & `Screen1.scm`) | Endpoint API sử dụng `/v1/`, nhưng model `gemini-2.5-flash` yêu cầu endpoint `/v1beta/`, dẫn đến lỗi **HTTP 404**. **Đã fix:** Chuyển endpoint sang `v1beta`. | ✅ Đã sửa |
 | **BUG-7** | 🔴 Cao | `Web1.GotText` | Không có khối kiểm tra mã HTTP; khi API lỗi (400, 404, 429...), app truy xuất `candidatesList[1]` gây crash runtime. **Đã fix:** Thêm rẽ nhánh `if responseCode = 200`, có thông báo giọng nói & hiển thị lỗi khi gặp sự cố. | ✅ Đã sửa |
 | **BUG-14** | 🔴 Cao | `Button3.Click` (Reset) | Nút Reset không đặt lại biến cờ `global first` về `FALSE`. Sau khi Reset, `first` vẫn là `TRUE` khiến app bỏ qua việc nhận diện Unit mới và luôn báo *"Sorry. Can you say again?"*. **Đã fix:** Thêm `global first ← FALSE` vào sự kiện Reset. | ✅ Đã sửa |
+| **BUG-15** | 🟡 Trung bình | `Button3.Click` (Reset) | Nút Reset không đặt lại `global check` về `FALSE`. **Đã fix:** Thêm `global check ← FALSE` vào `Button3.Click`. | ✅ Đã sửa |
+| **BUG-16** | 🟡 Trung bình | `Button3.Click` (Reset) | Nút Reset không làm rỗng `global currentVob`. **Đã fix:** Thêm `global currentVob ← create empty list` vào `Button3.Click`. | ✅ Đã sửa |
 
 ---
 
 ## 🔍 3. Rà soát các lỗi & vấn đề còn tồn đọng (Remaining Issues & Backlog)
 
-Dưới đây là danh sách toàn bộ các lỗi logic, trải nghiệm người dùng (UX) và tối ưu mã nguồn còn lại được phát hiện trong quá trình rà soát:
+Dưới đây là danh sách các lỗi logic, trải nghiệm người dùng (UX) và tối ưu mã nguồn còn lại được ghi nhận:
 
 ### 3.1. Nhóm lỗi Logic & Trải nghiệm (Cần lưu ý)
 
@@ -41,11 +43,6 @@ Dưới đây là danh sách toàn bộ các lỗi logic, trải nghiệm ngư�
   - *Hiện trạng:* Danh sách từ vựng `VobUnit1` có chứa chuỗi `"1"`.
   - *Ảnh hưởng:* Khi học sinh nói chọn *"Unit 11"*, chuỗi `"unit 11"` có chứa ký tự `"1"`, khiến vòng lặp kiểm tra `VobUnit1` khớp trước và tự động chọn nhầm Unit 1 thay vì Unit 11.
   - *Đề xuất fix:* Bỏ phần tử `"1"` hoặc chuẩn hóa từ khóa nhận diện Unit thành từ đầy đủ (ví dụ: `"unit 1"`, `"unit one"` thay vì số đơn lẻ).
-
-- **BUG-15 & BUG-16 (🟡 Trung bình) — Nút Reset chưa dọn sạch hoàn toàn các biến phiên cũ:**
-  - *Hiện trạng:* Trong `Button3.Click`, biến `currentVob` chưa được reset về rỗng (`create empty list`) và biến `check` chưa được reset về `FALSE`.
-  - *Ảnh hưởng:* Vẫn còn lưu lại danh sách từ vựng của Unit cũ trong bộ nhớ đệm trước khi chọn Unit mới.
-  - *Đề xuất fix:* Thêm lệnh gán `global currentVob ← create empty list` và `global check ← FALSE` vào `Button3.Click`.
 
 - **BUG-4 & BUG-13 (🟡 Trung bình) — Biến `history` chưa lưu đúng ngữ cảnh hội thoại:**
   - *Hiện trạng:* `global history` chỉ lưu câu hỏi gần nhất của máy (`currentUnit[questionIndex]`), không bao gồm câu trả lời trước đó của học sinh.
